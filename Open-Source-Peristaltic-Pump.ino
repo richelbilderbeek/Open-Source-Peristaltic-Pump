@@ -5,7 +5,7 @@
 
 // include the library code:
 #include <LiquidCrystal.h> //https://www.arduino.cc/en/Reference/LiquidCrystal -> LCD control
-#include <ClickEncoder.h> //https://github.com/0xPIT/encoder/blob/master/README.md -> Encoder processing (timer based)
+#include "ClickEncoder.h" //https://github.com/0xPIT/encoder/blob/master/README.md -> Encoder processing (timer based)
 #include <TimerOne.h> //required for ClickEncoder.h 
 #include <EEPROM.h> //write and read EEPROM (to save and load settings)
 
@@ -301,7 +301,7 @@ if (in_action){
     const int n_min = menu[10].value;
     const int n_sec = n_min * 60;
     const int n_msec = n_sec * 1000;
-    sleep(n_msec);
+    delay(n_msec);
 
   }
   break;
