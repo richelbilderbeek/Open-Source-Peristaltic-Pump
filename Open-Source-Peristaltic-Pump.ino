@@ -94,8 +94,8 @@ typedef struct
   const char* options[4];
   const char* suffix;
 } menu_item;
-int menu_items_limit = NUM_OF_MENU_ITEMS - 1;
-menu_item menu[NUM_OF_MENU_ITEMS];
+int menu_items_limit = 10 - 1;
+menu_item menu[10];
 
 
 //███ SETUP ████████████████████████████████████████████████████████████████████████████████████████████████████
