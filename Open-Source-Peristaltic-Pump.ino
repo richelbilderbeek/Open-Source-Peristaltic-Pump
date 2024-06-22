@@ -1,7 +1,25 @@
 // Added a new option, called DoseWait
 // In menu item 2, Volume, set the volume
 // In new menu item 11, set the wait time in minutes
- 
+
+#ifdef NDEBUG
+  #define Assert(x) ((void)0)
+#else
+  #define Assert(x)                  \
+  if (!(x))                          \
+  {                                  \
+    const String msg =               \
+      String("E: ") +                \
+      String(__LINE__) +             \
+      String(", ") +                 \
+      String(#x)                     \
+    ;                                \
+    lcd.setCursor(0, 0);             \
+    lcd.print(msg);                  \
+    delay(1000);                     \
+    abort();                         \
+  }
+#endif
 
 // include the library code:
 #include <LiquidCrystal.h> //https://www.arduino.cc/en/Reference/LiquidCrystal -> LCD control
@@ -91,7 +109,7 @@ typedef struct
   int value;
   int decimals;
   int lim;
-  const char* options[4];
+  const char* options[MAX_NUM_OF_OPTIONS];
   const char* suffix;
 } menu_item;
 int menu_items_limit = 10 - 1;
@@ -100,7 +118,7 @@ menu_item menu[10];
 
 //███ SETUP ████████████████████████████████████████████████████████████████████████████████████████████████████
 void setup(){
-  
+ Assert(1==2);  
  pinMode(MOTOR_STEP_PIN,OUTPUT); 
  pinMode(MOTOR_DIR_PIN,OUTPUT);
  digitalWrite(MOTOR_DIR_PIN,LOW);
