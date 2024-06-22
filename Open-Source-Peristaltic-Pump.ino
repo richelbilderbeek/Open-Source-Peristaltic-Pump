@@ -1,3 +1,8 @@
+// Added a new option, called DoseWait
+// In menu item 2, Volume, set the volume
+// In new menu item 11, set the wait time in minutes
+ 
+
 // include the library code:
 #include <LiquidCrystal.h> //https://www.arduino.cc/en/Reference/LiquidCrystal -> LCD control
 #include <ClickEncoder.h> //https://github.com/0xPIT/encoder/blob/master/README.md -> Encoder processing (timer based)
@@ -65,7 +70,7 @@ const unsigned int CALIBR_DELAY_US = (CALIBR_DURATION * MICROSEC_PER_SEC)/(CALIB
 
 //MENU ---------------------------------------------------------------------------------------
 #define MAX_NUM_OF_OPTIONS 4
-#define NUM_OF_MENU_ITEMS 10
+#define NUM_OF_MENU_ITEMS 11
 #define VALUE_MAX_DIGITS 4
 int menu_number_1=0;
 int menu_number_2=1;
@@ -88,9 +93,9 @@ typedef struct
   int lim;
   const char* options[4];
   const char* suffix;
-}menu_item;
-int menu_items_limit = 10-1;
-menu_item menu[10];
+} menu_item;
+int menu_items_limit = NUM_OF_MENU_ITEMS - 1;
+menu_item menu[NUM_OF_MENU_ITEMS];
 
 
 //███ SETUP ████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -151,6 +156,7 @@ void setup(){
  menu[6].options[0] = "Dose";
  menu[6].options[1] = "Pump";
  menu[6].options[2] = "Cal.";
+ menu[6].options[3] = "DoseWait"; // New setting
 
  menu[7].name_ = "Cal.";
  menu[7].type = VALUE;
@@ -170,6 +176,13 @@ void setup(){
  menu[9].value = 0;
  menu[9].lim = 0;
  menu[9].suffix = "ON!";
+
+ menu[10].name_ = "Wait";
+ menu[10].type = VALUE;
+ menu[10].value = 0;
+ menu[10].decimals = VALUE_MAX_DIGITS;
+ menu[10].lim = 9999;
+ menu[10].suffix = "min";
 
   for (int i=0; i <= menu_items_limit; i++){
       menu[i].value = eepromReadInt(i*2);
@@ -283,6 +296,13 @@ if (in_action){
     if (dose(CALIBR_STEPS, CALIBR_DELAY_US, step_counter)){
       exit_action_menu();
     }
+  } else if (menu[6].value == 3) { // DoseWait
+    dose(steps, delay_us, step_counter);
+    const int n_min = menu[10].value;
+    const int n_sec = n_min * 60;
+    const int n_msec = n_sec * 1000;
+    sleep(n_msec);
+
   }
   break;
 
@@ -653,5 +673,3 @@ byte low, high;
   high=EEPROM.read(adr+1);
   return low + ((high << 8)&0xFF00);
 } //eepromReadInt
-
-
