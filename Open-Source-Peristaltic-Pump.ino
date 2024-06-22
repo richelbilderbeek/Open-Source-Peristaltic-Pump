@@ -70,7 +70,10 @@ const unsigned int CALIBR_DELAY_US = (CALIBR_DURATION * MICROSEC_PER_SEC)/(CALIB
 
 //MENU ---------------------------------------------------------------------------------------
 #define MAX_NUM_OF_OPTIONS 4
+
+// Number of menu items
 #define NUM_OF_MENU_ITEMS 10
+
 #define VALUE_MAX_DIGITS 4
 int menu_number_1=0;
 int menu_number_2=1;
@@ -94,8 +97,8 @@ typedef struct
   const char* options[4];
   const char* suffix;
 }menu_item;
-int menu_items_limit = 10-1;
-menu_item menu[10];
+const int menu_items_limit = NUM_OF_MENU_ITEMS-1;
+menu_item menu[NUM_OF_MENU_ITEMS];
 
 
 //███ SETUP ████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -153,7 +156,7 @@ void setup(){
  menu[6].type = OPTION;
  menu[6].value = 0;
  menu[6].lim = 3-1;
- menu[6].options[0] = "Dose";
+ menu[6].options[0] = "DoseWait";
  menu[6].options[1] = "Pump";
  menu[6].options[2] = "Cal.";
 
