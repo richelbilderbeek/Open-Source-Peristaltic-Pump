@@ -1,6 +1,8 @@
 // Added a new option, called DoseWait
 // In menu item 2, Volume, set the volume
-// In new menu item 11, set the wait time in minutes
+
+// Hardcoded: number of minutes in DoseWait
+const int n_min_dose_wait = 15;
 
 #ifdef NDEBUG
   #define Assert(x) ((void)0)
@@ -88,9 +90,11 @@ const unsigned int CALIBR_DELAY_US = (CALIBR_DURATION * MICROSEC_PER_SEC)/(CALIB
 
 //MENU ---------------------------------------------------------------------------------------
 #define MAX_NUM_OF_OPTIONS 4
-#define NUM_OF_MENU_ITEMS 11
+#define NUM_OF_MENU_ITEMS 10
 #define VALUE_MAX_DIGITS 4
-int menu_number_1=0;
+
+// This is the main menu item index, i.e. 0 = start, 2 = volume, etc.
+int main_menu_item_index = 0;
 int menu_number_2=1;
 boolean val_change =0;
 double value_dbl;
@@ -112,13 +116,19 @@ typedef struct
   const char* options[MAX_NUM_OF_OPTIONS];
   const char* suffix;
 } menu_item;
-int menu_items_limit = 10 - 1;
-menu_item menu[10];
+
+menu_item menu[NUM_OF_MENU_ITEMS];
+// Maximum index for a menu item
+const int menu_items_limit = NUM_OF_MENU_ITEMS - 1;
+const int menu_item_idx_calibrate = 7;
+const int menu_item_idx_usb_ctrl = 9;
 
 
 //███ SETUP ████████████████████████████████████████████████████████████████████████████████████████████████████
 void setup(){
- Assert(1==2);  
+ Assert(menu_item_idx_calibrate == 7);
+ Assert(menu_item_idx_usb_ctrl == 9);
+ Assert(menu_item_idx_usb_ctrl < NUM_OF_MENU_ITEMS);
  pinMode(MOTOR_STEP_PIN,OUTPUT); 
  pinMode(MOTOR_DIR_PIN,OUTPUT);
  digitalWrite(MOTOR_DIR_PIN,LOW);
@@ -140,7 +150,7 @@ void setup(){
  menu[2].name_ = "V.Unit:";
  menu[2].type = OPTION;
  menu[2].value = 0;
- menu[2].lim = 3-1;
+ menu[2].lim = 3 - 1; // lim = maximum index value for an option, i.e. n_elements - 1
  menu[2].options[0] = "mL";
  menu[2].options[1] = "uL";
  menu[2].options[2] = "rot";
@@ -155,7 +165,7 @@ void setup(){
  menu[4].name_ = "S.Unit:";
  menu[4].type = OPTION;
  menu[4].value = 0;
- menu[4].lim = 3-1;
+ menu[4].lim = 3-1; // lim = maximum index value for an option, i.e. n_elements - 1
  menu[4].options[0] = "mL/min";
  menu[4].options[1] = "uL/min";
  menu[4].options[2] = "rpm";
@@ -163,25 +173,25 @@ void setup(){
  menu[5].name_ = "Direction:";
  menu[5].type = OPTION;
  menu[5].value = 0;
- menu[5].lim = 2-1;
+ menu[5].lim = 2-1; // lim = maximum index value for an option, i.e. n_elements - 1
  menu[5].options[0] = "CW";
  menu[5].options[1] = "CCW";
 
  menu[6].name_ = "Mode:";
  menu[6].type = OPTION;
  menu[6].value = 0;
- menu[6].lim = 3-1;
+ menu[6].lim = 4 - 1; // lim = maximum index value for an option, i.e. n_elements - 1
  menu[6].options[0] = "Dose";
  menu[6].options[1] = "Pump";
  menu[6].options[2] = "Cal.";
  menu[6].options[3] = "DoseWait"; // New setting
 
- menu[7].name_ = "Cal.";
- menu[7].type = VALUE;
- menu[7].value = 0;
- menu[7].decimals = CALIBR_DECIMALS;
- menu[7].lim = 20000;
- menu[7].suffix="mL";
+ menu[menu_item_idx_calibrate].name_ = "Cal.";
+ menu[menu_item_idx_calibrate].type = VALUE;
+ menu[menu_item_idx_calibrate].value = 0;
+ menu[menu_item_idx_calibrate].decimals = CALIBR_DECIMALS;
+ menu[menu_item_idx_calibrate].lim = 20000;
+ menu[menu_item_idx_calibrate].suffix="mL";
 
  menu[8].name_ = "Save Sett.";
  menu[8].type = ACTION;
@@ -189,19 +199,13 @@ void setup(){
  menu[8].lim = 0;
  menu[8].suffix = "OK!";
 
- menu[9].name_ = "USB Ctrl";
- menu[9].type = ACTION;
- menu[9].value = 0;
- menu[9].lim = 0;
- menu[9].suffix = "ON!";
+ menu[menu_item_idx_usb_ctrl].name_ = "USB Ctrl";
+ menu[menu_item_idx_usb_ctrl].type = ACTION;
+ menu[menu_item_idx_usb_ctrl].value = 0;
+ menu[menu_item_idx_usb_ctrl].lim = 0;
+ menu[menu_item_idx_usb_ctrl].suffix = "ON!";
 
- menu[10].name_ = "Wait";
- menu[10].type = VALUE;
- menu[10].value = 0;
- menu[10].decimals = VALUE_MAX_DIGITS;
- menu[10].lim = 9999;
- menu[10].suffix = "min";
-
+  // Save all menu items
   for (int i=0; i <= menu_items_limit; i++){
       menu[i].value = eepromReadInt(i*2);
   }
@@ -230,8 +234,18 @@ void setup(){
   }
   menu[3].suffix = menu[4].options[menu[4].value];
   update_lcd();
-  steps = steps_calc(menu[1].value, menu[2].value, menu[7].value, menu[1].decimals);
-  delay_us = delay_us_calc(menu[3].value, menu[4].value, menu[7].value, menu[3].decimals);
+  steps = steps_calc(
+    menu[1].value, 
+    menu[2].value, 
+    menu[menu_item_idx_calibrate].value, 
+    menu[1].decimals
+  );
+  delay_us = delay_us_calc(
+    menu[3].value, 
+    menu[4].value, 
+    menu[menu_item_idx_calibrate].value, 
+    menu[3].decimals
+  );
   
 }
 
@@ -240,17 +254,20 @@ void setup(){
 //███ LOOP ████████████████████████████████████████████████████████████████████████████████████████████████████
 
 void loop() {
-  
+
+Assert(main_menu_item_index >= 0);
+Assert(main_menu_item_index < NUM_OF_MENU_ITEMS);
+
 // BUTTON HANDLING ////////////////////////////////////////////////////////////////////////////////
 
 ClickEncoder::Button b = encoder->getButton();
   if (b != ClickEncoder::Open) {
     switch (b) {
       case ClickEncoder::Clicked:
-        if(menu[menu_number_1].type == VALUE ||menu[menu_number_1].type == OPTION){ // if value or option type
+        if(menu[main_menu_item_index].type == VALUE ||menu[main_menu_item_index].type == OPTION){ // if value or option type
           in_menu =!in_menu;
         }
-        if(menu[menu_number_1].type == ACTION){ // if action type
+        if(menu[main_menu_item_index].type == ACTION){ // if action type
           in_action=!in_action;
           step_counter= 0;
         }
@@ -265,15 +282,19 @@ ClickEncoder::Button b = encoder->getButton();
         break;
         
       case ClickEncoder::DoubleClicked:
-          if (menu[menu_number_1].type == VALUE){
-          menu[menu_number_1].value = menu[menu_number_1].value + menu[menu_number_1].lim/10;
+          Assert(main_menu_item_index >= 0);
+          Assert(main_menu_item_index < NUM_OF_MENU_ITEMS);
+          if (menu[main_menu_item_index].type == VALUE){
+          menu[main_menu_item_index].value = menu[main_menu_item_index].value + menu[main_menu_item_index].lim/10;
           val_change=true;
           }
         break;
       case ClickEncoder::Held:
-          if (menu[menu_number_1].type == VALUE){
-          menu[menu_number_1].value = 0;
-          val_change=true;
+          Assert(main_menu_item_index >= 0);
+          Assert(main_menu_item_index < NUM_OF_MENU_ITEMS);
+          if (menu[main_menu_item_index].type == VALUE){
+            menu[main_menu_item_index].value = 0;
+            val_change=true;
           }
         break;
       case ClickEncoder::Released:
@@ -286,12 +307,16 @@ ClickEncoder::Button b = encoder->getButton();
 
 if (menu_entered){
   lcd.blink();
-  if (menu[menu_number_1].type == ACTION){
-    lcd.setCursor((LCD_COLUMNS - strlen(menu[menu_number_1].suffix)), 0);
-    lcd.print(menu[menu_number_1].suffix);
+  Assert(main_menu_item_index >= 0);
+  Assert(main_menu_item_index < NUM_OF_MENU_ITEMS);
+  if (menu[main_menu_item_index].type == ACTION){
+    Assert(main_menu_item_index >= 0);
+    Assert(main_menu_item_index < NUM_OF_MENU_ITEMS);
+    lcd.setCursor((LCD_COLUMNS - strlen(menu[main_menu_item_index].suffix)), 0);
+    lcd.print(menu[main_menu_item_index].suffix);
     lcd.setCursor(15, 0);
   }
-  if (menu[menu_number_1].type == VALUE){
+  if (menu[main_menu_item_index].type == VALUE){
     encoder->setAccelerationEnabled(true);
   }
   menu_entered = false;
@@ -302,7 +327,9 @@ if (menu_entered){
 /// ACTIONS ////////////////////////////////////////////////////////////////////////////////
 
 if (in_action){
-  switch (menu_number_1){
+  Assert(main_menu_item_index >= 0);
+  Assert(main_menu_item_index < NUM_OF_MENU_ITEMS);
+  switch (main_menu_item_index){
   case 0: //Start
   if (menu[6].value == 0){ //Dose
     if (dose(steps, delay_us, step_counter)){
@@ -316,14 +343,13 @@ if (in_action){
     }
   } else if (menu[6].value == 3) { // DoseWait
     dose(steps, delay_us, step_counter);
-    const int n_min = menu[10].value;
-    const int n_sec = n_min * 60;
-    const int n_msec = n_sec * 1000;
-    delay(n_msec);
+    const int n_sec_dose_wait = n_min_dose_wait * 60;
+    const int n_msec_dose_wait = n_sec_dose_wait * 1000;
+    delay(n_msec_dose_wait);
 
   }
   break;
-
+  
   case 8:
    for (int i=0; i <= menu_items_limit; i++){
       eepromWriteInt(i*2,menu[i].value);
@@ -332,7 +358,7 @@ if (in_action){
    menu_left = true;
   break;
   
-  case 9:
+  case menu_item_idx_usb_ctrl:
   while (Serial.available()) {
     inChar = (char)Serial.read();     // get the new byte:
     step_counter = 0;
@@ -340,7 +366,7 @@ if (in_action){
       rate_uL_min=Serial.parseInt();
       cal=Serial.parseInt();
       if(cal==0){
-        cal = menu[7].value;
+        cal = menu[menu_item_idx_calibrate].value;
       }
       delay_us = delay_us_calc(rate_uL_min, 1, cal, 0);
       usb_start=true;
@@ -349,7 +375,7 @@ if (in_action){
       rate_uL_min=Serial.parseInt();
       cal=Serial.parseInt();
       if(cal==0){
-        cal = menu[7].value;
+        cal = menu[menu_item_idx_calibrate].value;
       }
       steps = steps_calc(vol_uL, 1, cal, 0);
       delay_us = delay_us_calc(rate_uL_min, 1, cal, 0);
@@ -358,7 +384,7 @@ if (in_action){
       usb_start=true;
     } else if (inChar == 'w'){
       cal=Serial.parseInt();
-      menu[7].value =cal;
+      menu[menu_item_idx_calibrate].value = cal;
       for (int i=0; i <= menu_items_limit; i++){
       eepromWriteInt(i*2,menu[i].value);
       }
@@ -396,13 +422,21 @@ if (val_change==true){
 value += encoder->getValue(); // encoder update
 
 if (!in_menu){ // no menu selected
-  val_change = encoder_selection(menu_number_1, menu_number_2, menu_items_limit); //process value change
+  // main_menu_item_index = new index
+  val_change = encoder_selection(
+    main_menu_item_index, 
+    menu_number_2, 
+    menu_items_limit
+  ); //process value change
 
 }else if(in_menu){ // menu selected
-  if(menu[menu_number_1].type == 0){
-    val_change = encoder_value_selection(menu[menu_number_1].value, menu[menu_number_1].lim);
+  if(menu[main_menu_item_index].type == 0){
+    val_change = encoder_value_selection(menu[main_menu_item_index].value, menu[main_menu_item_index].lim);
   } else {
-    val_change = encoder_selection(menu[menu_number_1].value, menu[menu_number_1].lim);
+    val_change = encoder_selection(
+      menu[main_menu_item_index].value, 
+      menu[main_menu_item_index].lim
+    );
   }
 }
 
@@ -412,15 +446,15 @@ if (!in_menu){ // no menu selected
 
 if (menu_left){
   lcd.noBlink();
-  if (menu[menu_number_1].type == ACTION){
+  if (menu[main_menu_item_index].type == ACTION){
     exit_action_menu();
   }
-  if (menu[menu_number_1].type == VALUE){
+  if (menu[main_menu_item_index].type == VALUE){
     encoder->setAccelerationEnabled(false);
   }
   
-  if (menu_number_1 == 2){
-    menu[menu_number_1-1].suffix = menu[menu_number_1].options[menu[menu_number_1].value];
+  if (main_menu_item_index == 2){
+    menu[main_menu_item_index-1].suffix = menu[main_menu_item_index].options[menu[main_menu_item_index].value];
       if (menu[1].suffix=="uL"){
         menu[1].decimals = 0;
       } else {
@@ -428,23 +462,33 @@ if (menu_left){
        }
   }
 
-  if (menu_number_1 == 4){
-    menu[menu_number_1-1].suffix = menu[menu_number_1].options[menu[menu_number_1].value];
+  if (main_menu_item_index == 4){
+    menu[main_menu_item_index-1].suffix = menu[main_menu_item_index].options[menu[main_menu_item_index].value];
     if (menu[3].suffix=="uL/min"){
       menu[3].decimals = 0;
     } else {
       menu[3].decimals = 1;
     }
   }
-  if (menu_number_1 == 5){ //Change Direction
+  if (main_menu_item_index == 5){ //Change Direction
     if (menu[5].value == 0){
       digitalWrite(MOTOR_DIR_PIN,LOW); 
     }else{
       digitalWrite(MOTOR_DIR_PIN,HIGH);
     }
   }
-  steps = steps_calc(menu[1].value, menu[2].value, menu[7].value, menu[1].decimals);
-  delay_us = delay_us_calc(menu[3].value, menu[4].value, menu[7].value, menu[3].decimals);
+  steps = steps_calc(
+    menu[1].value, 
+    menu[2].value, 
+    menu[menu_item_idx_calibrate].value, 
+    menu[1].decimals
+  );
+  delay_us = delay_us_calc(
+    menu[3].value, 
+    menu[4].value, 
+    menu[menu_item_idx_calibrate].value, 
+    menu[3].decimals
+  );
   
   menu_left = false;
 }
@@ -500,7 +544,7 @@ void pump(int _delay_us) {
 
 void exit_action_menu(){
    in_action = false;
-   lcd.setCursor((LCD_COLUMNS - strlen(menu[menu_number_1].suffix)), 0);
+   lcd.setCursor((LCD_COLUMNS - strlen(menu[main_menu_item_index].suffix)), 0);
    lcd.print("          ");
    lcd.noBlink();
 }
@@ -563,20 +607,20 @@ void update_lcd(){
     lcd.clear();
 //first line LCD ------------------------------------
   lcd.setCursor(0, 0);
-  lcd.print(menu_number_1);
+  lcd.print(main_menu_item_index);
   lcd.print("|");
-  lcd.print(menu[menu_number_1].name_);
-  if (menu[menu_number_1].type == 0){         //if value type
-    value_dbl = menu[menu_number_1].value;
-    value_dbl = value_dbl/pow(10,menu[menu_number_1].decimals);
-    dtostrf(value_dbl, VALUE_MAX_DIGITS, menu[menu_number_1].decimals, value_str );
+  lcd.print(menu[main_menu_item_index].name_);
+  if (menu[main_menu_item_index].type == 0){         //if value type
+    value_dbl = menu[main_menu_item_index].value;
+    value_dbl = value_dbl/pow(10,menu[main_menu_item_index].decimals);
+    dtostrf(value_dbl, VALUE_MAX_DIGITS, menu[main_menu_item_index].decimals, value_str );
     lcd.print(" ");
     lcd.print(value_str); //print value
-    lcd.print(menu[menu_number_1].suffix);
-  }  else if(menu[menu_number_1].type == 1){  //if option type
+    lcd.print(menu[main_menu_item_index].suffix);
+  }  else if(menu[main_menu_item_index].type == 1){  //if option type
     lcd.print(" ");
-    lcd.print(menu[menu_number_1].options[menu[menu_number_1].value]); //print menu[x].option[] of menu[x].value
-  } else if(menu[menu_number_1].type == 2){   //if action type
+    lcd.print(menu[main_menu_item_index].options[menu[main_menu_item_index].value]); //print menu[x].option[] of menu[x].value
+  } else if(menu[main_menu_item_index].type == 2){   //if action type
 
   }
   
@@ -656,7 +700,7 @@ boolean encoder_selection(int & x, int & y, int lim){ //main menu
     last = value;
     return true;
   }else if(value < last){
-    y = menu_number_1;
+    y = main_menu_item_index;
     x--;
     if(x<0)
     {
