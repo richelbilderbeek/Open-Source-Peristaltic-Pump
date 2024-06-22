@@ -1,6 +1,11 @@
+
+// The time between giving a dose,
+// use Dose mode.
+const int wait_time_msecs = 5000;
+
 // include the library code:
 #include <LiquidCrystal.h> //https://www.arduino.cc/en/Reference/LiquidCrystal -> LCD control
-#include <ClickEncoder.h> //https://github.com/0xPIT/encoder/blob/master/README.md -> Encoder processing (timer based)
+#include "ClickEncoder.h" //https://github.com/0xPIT/encoder/blob/master/README.md -> Encoder processing (timer based)
 #include <TimerOne.h> //required for ClickEncoder.h 
 #include <EEPROM.h> //write and read EEPROM (to save and load settings)
 
@@ -275,7 +280,9 @@ if (in_action){
   case 0: //Start
   if (menu[6].value == 0){ //Dose
     if (dose(steps, delay_us, step_counter)){
-      exit_action_menu();
+      delay(wait_time_msecs); //NEW
+      step_counter = 0; // NEW
+      // exit_action_menu(); //NEW
     }
   } else if (menu[6].value == 1){ //Pump
     pump(delay_us);
@@ -423,7 +430,7 @@ void timerIsr() {
 
 //_____________________________________________________________________________________________
 
-boolean dose(long _steps, int _delay_us, long & inc) {
+boolean dose(const long _steps, const int _delay_us, long & inc) {
       if(inc < _steps){
         digitalWrite(MOTOR_STEP_PIN,HIGH); 
         delayMicroseconds(_delay_us);
@@ -653,5 +660,3 @@ byte low, high;
   high=EEPROM.read(adr+1);
   return low + ((high << 8)&0xFF00);
 } //eepromReadInt
-
-
