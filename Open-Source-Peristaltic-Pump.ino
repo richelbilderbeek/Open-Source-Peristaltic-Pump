@@ -1,8 +1,9 @@
 
 // The time between giving a dose,
 // use Dose mode.
-const int wait_time_msecs = 5000;
+//const int wait_time_msecs = 5000;
 
+#include <assert.h>
 // include the library code:
 #include <LiquidCrystal.h> //https://www.arduino.cc/en/Reference/LiquidCrystal -> LCD control
 #include "ClickEncoder.h" //https://github.com/0xPIT/encoder/blob/master/README.md -> Encoder processing (timer based)
@@ -72,7 +73,8 @@ const unsigned int CALIBR_DELAY_US = (CALIBR_DURATION * MICROSEC_PER_SEC)/(CALIB
 #define MAX_NUM_OF_OPTIONS 4
 
 // Number of menu items
-#define NUM_OF_MENU_ITEMS 10
+// NEW: added 1
+#define NUM_OF_MENU_ITEMS 11
 
 #define VALUE_MAX_DIGITS 4
 int menu_number_1=0;
@@ -99,6 +101,8 @@ typedef struct
 }menu_item;
 const int menu_items_limit = NUM_OF_MENU_ITEMS-1;
 menu_item menu[NUM_OF_MENU_ITEMS];
+
+const int menu_item_idx_wait_time = 10;
 
 
 //███ SETUP ████████████████████████████████████████████████████████████████████████████████████████████████████
@@ -178,6 +182,14 @@ void setup(){
  menu[9].value = 0;
  menu[9].lim = 0;
  menu[9].suffix = "ON!";
+
+ assert(menu_item_idx_wait_time == 10);
+ menu[menu_item_idx_wait_time].name_ = "Wait";
+ menu[menu_item_idx_wait_time].type = VALUE;
+ menu[menu_item_idx_wait_time].value = 0;
+ menu[menu_item_idx_wait_time].decimals = 0;
+ menu[menu_item_idx_wait_time].lim = 9999;
+ menu[menu_item_idx_wait_time].suffix="sec";
 
   for (int i=0; i <= menu_items_limit; i++){
       menu[i].value = eepromReadInt(i*2);
@@ -283,8 +295,9 @@ if (in_action){
   case 0: //Start
   if (menu[6].value == 0){ //Dose
     if (dose(steps, delay_us, step_counter)){
-      delay(wait_time_msecs); //NEW
-      step_counter = 0; // NEW
+      const int n_secs = menu[menu_item_idx_wait_time].value;
+      delay(n_secs * 1000); //NEW
+      step_counter = 0; // NEW: restart!
       // exit_action_menu(); //NEW
     }
   } else if (menu[6].value == 1){ //Pump
