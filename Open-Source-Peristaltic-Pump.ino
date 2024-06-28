@@ -296,7 +296,11 @@ if (in_action){
   if (menu[6].value == 0){ //Dose
     if (dose(steps, delay_us, step_counter)){
       const int n_secs = menu[menu_item_idx_wait_time].value;
-      delay(n_secs * 1000); //NEW
+      // Prevent 32k to overflow.
+      for (int i = 0; i != n_secs; ++i)
+      {
+        delay(1000);
+      }
       step_counter = 0; // NEW: restart!
       // exit_action_menu(); //NEW
     }
